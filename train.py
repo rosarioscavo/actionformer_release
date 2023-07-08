@@ -1,5 +1,6 @@
 # python imports
 import argparse
+import glob
 import os
 import time
 import datetime
@@ -11,6 +12,7 @@ import torch.nn as nn
 import torch.utils.data
 # for visualization
 from torch.utils.tensorboard import SummaryWriter
+import wandb
 
 # our code
 from libs.core import load_config
@@ -20,6 +22,39 @@ from libs.utils import (train_one_epoch, valid_one_epoch, ANETdetection,
                         save_checkpoint, make_optimizer, make_scheduler,
                         fix_random_seed, ModelEma)
 
+def init_wandb(cfg):
+    
+    tags = []
+    dataset_filename = cfg['dataset']['json_file']
+    if "enigma_hd_hr" in dataset_filename:
+        tags.append("Enigma Hand Take/Release")
+    elif "enigma_hc_hr" in dataset_filename:
+        tags.append("enigma_hc_hr")
+    else:
+        raise ValueError("Dataset not supported")
+    
+    wandb.init(
+        project="actionformer-project",
+        config=cfg,
+        tags=tags,
+    )
+    
+    # we consider only the last mAP value
+    wandb.define_metric("val/mAP", summary="last")
+    
+    artifact = wandb.Artifact(name='enigma_dataset', type='dataset')
+    artifact.add_file(cfg['dataset']['json_file']) # Adds multiple files to artifact
+    wandb.log_artifact(artifact)
+    
+def wandb_add_artifact_model(ckpt_filename: str):
+    """ Add model checkpoint to wandb artifact
+
+    Args:
+        ckpt_filename (str): path to checkpoint file
+    """    
+    artifact = wandb.Artifact(name='actionformer_model', type='model')
+    artifact.add_file(ckpt_filename, name='ckpt')
+    wandb.log_artifact(artifact)
 
 ################################################################################
 def main(args):
@@ -57,18 +92,40 @@ def main(args):
     cfg['opt']["learning_rate"] *= len(cfg['devices'])
     cfg['loader']['num_workers'] *= len(cfg['devices'])
 
-    """2. create dataset / dataloader"""
+    """2. create training dataset / dataloader"""
     train_dataset = make_dataset(
         cfg['dataset_name'], True, cfg['train_split'], **cfg['dataset']
     )
+    
+    """2. create validation dataset / dataloader"""
+    val_dataset = make_dataset(
+        cfg['dataset_name'], False, cfg['val_split'], **cfg['dataset']
+    )
+    
     # update cfg based on dataset attributes (fix to epic-kitchens)
     train_db_vars = train_dataset.get_attributes()
     cfg['model']['train_cfg']['head_empty_cls'] = train_db_vars['empty_label_ids']
+    
+    
+    # start a new wandb run to track this script
+    init_wandb(cfg)
 
-    # data loaders
+    # FOR VALIDATION
     train_loader = make_data_loader(
         train_dataset, True, rng_generator, **cfg['loader'])
 
+    # set bs = 1, and disable shuffle
+    val_loader = make_data_loader(
+        val_dataset, False, None, 1, cfg['loader']['num_workers']
+    )
+    
+    val_db_vars = val_dataset.get_attributes()
+    det_eval = ANETdetection(
+        val_dataset.json_file,
+        val_dataset.split[0],
+        tiou_thresholds = val_db_vars['tiou_thresholds']
+    )
+    
     """3. create model, optimizer, and scheduler"""
     # model
     model = make_meta_arch(cfg['model_name'], **cfg['model'])
@@ -117,8 +174,9 @@ def main(args):
     # start training
     max_epochs = cfg['opt'].get(
         'early_stop_epochs',
-        cfg['opt']['epochs'] + cfg['opt']['warmup_epochs']
+        cfg['opt']['epochs']
     )
+    
     for epoch in range(args.start_epoch, max_epochs):
         # train for one epoch
         train_one_epoch(
@@ -131,6 +189,17 @@ def main(args):
             clip_grad_l2norm = cfg['train_cfg']['clip_grad_l2norm'],
             tb_writer=tb_writer,
             print_freq=args.print_freq
+        )
+
+        mAP = valid_one_epoch(
+            val_loader,
+            model,
+            epoch,
+            evaluator=det_eval,
+            output_file=None,
+            ext_score_file=None,
+            tb_writer=tb_writer,
+            print_freq=20
         )
 
         # save ckpt once in a while
@@ -146,13 +215,20 @@ def main(args):
             }
 
             save_states['state_dict_ema'] = model_ema.module.state_dict()
+            file_name_ckpt = 'epoch_{:03d}.pth.tar'.format(epoch + 1)
             save_checkpoint(
                 save_states,
                 False,
                 file_folder=ckpt_folder,
-                file_name='epoch_{:03d}.pth.tar'.format(epoch + 1)
+                file_name=file_name_ckpt
             )
 
+    print('Final average mAP: {:>4.2f} (%)'.format(mAP*100))
+    
+    # save only last ckpt
+    ckpt_filename = os.path.join(ckpt_folder, file_name_ckpt)
+    wandb_add_artifact_model(ckpt_filename)
+    
     # wrap up
     tb_writer.close()
     print("All done!")

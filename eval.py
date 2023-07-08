@@ -78,6 +78,10 @@ def main(args):
 
     # set up evaluator
     det_eval, output_file = None, None
+    
+    json_file = cfg["dataset"]["json_file"]
+    file_name = os.path.splitext(os.path.basename(json_file))[0]
+    
     if not args.saveonly:
         val_db_vars = val_dataset.get_attributes()
         det_eval = ANETdetection(
@@ -88,6 +92,8 @@ def main(args):
     else:
         output_file = os.path.join(os.path.split(ckpt_file)[0], 'eval_results.pkl')
 
+    output_file = cfg["output_results"]+file_name+'.pickle'
+    
     """5. Test the model"""
     print("\nStart testing model {:s} ...".format(cfg['model_name']))
     start = time.time()

@@ -2,6 +2,7 @@ import os
 import shutil
 import time
 import pickle
+import wandb
 
 import numpy as np
 import random
@@ -17,6 +18,10 @@ from ..modeling import MaskedConv1D, Scale, AffineDropPath, LayerNorm
 
 
 ################################################################################
+def save_results(results, output_filename):
+    with open(output_filename, "wb") as file:
+        pickle.dump(results, file)
+
 def fix_random_seed(seed, include_cuda=True):
     rng_generator = torch.manual_seed(seed)
     np.random.seed(seed)
@@ -307,6 +312,9 @@ def train_one_epoch(
             lr = scheduler.get_last_lr()[0]
             global_step = curr_epoch * num_iters + iter_idx
             if tb_writer is not None:
+                wandb_data = {}
+                wandb_data['train/learning_rate'] = lr
+                
                 # learning rate (after stepping)
                 tb_writer.add_scalar(
                     'train/learning_rate',
@@ -318,17 +326,23 @@ def train_one_epoch(
                 for key, value in losses_tracker.items():
                     if key != "final_loss":
                         tag_dict[key] = value.val
+                
+                wandb_data['train/all_losses'] = tag_dict
+                
                 tb_writer.add_scalars(
                     'train/all_losses',
                     tag_dict,
                     global_step
                 )
+                wandb_data['train/final_loss'] = losses_tracker['final_loss'].val
                 # final loss
                 tb_writer.add_scalar(
                     'train/final_loss',
                     losses_tracker['final_loss'].val,
                     global_step
                 )
+                
+                wandb.log(wandb_data, step=global_step)
 
             # print to terminal
             block1 = 'Epoch: [{:03d}][{:05d}/{:05d}]'.format(
@@ -420,7 +434,7 @@ def valid_one_epoch(
     results['t-end'] = torch.cat(results['t-end']).numpy()
     results['label'] = torch.cat(results['label']).numpy()
     results['score'] = torch.cat(results['score']).numpy()
-
+            
     if evaluator is not None:
         if ext_score_file is not None and isinstance(ext_score_file, str):
             results = postprocess_results(results, ext_score_file)
@@ -428,12 +442,12 @@ def valid_one_epoch(
         _, mAP, _ = evaluator.evaluate(results, verbose=True)
     else:
         # dump to a pickle file that can be directly used for evaluation
-        with open(output_file, "wb") as f:
-            pickle.dump(results, f)
+        save_results(results, output_file)
         mAP = 0.0
 
     # log mAP to tb_writer
     if tb_writer is not None:
         tb_writer.add_scalar('validation/mAP', mAP, curr_epoch)
+        wandb.log({"validation/mAP":mAP})
 
     return mAP
