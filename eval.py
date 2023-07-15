@@ -91,8 +91,6 @@ def main(args):
         )
     else:
         output_file = os.path.join(os.path.split(ckpt_file)[0], 'eval_results.pkl')
-
-    output_file = cfg["output_results"]+file_name+'.pickle'
     
     """5. Test the model"""
     print("\nStart testing model {:s} ...".format(cfg['model_name']))

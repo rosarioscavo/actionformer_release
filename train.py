@@ -22,14 +22,21 @@ from libs.utils import (train_one_epoch, valid_one_epoch, ANETdetection,
                         save_checkpoint, make_optimizer, make_scheduler,
                         fix_random_seed, ModelEma)
 
+def get_filename(path):
+    return os.path.splitext(os.path.basename(path))[0]
+
 def init_wandb(cfg):
     
     tags = []
+    dataset_tags = {'enigma_hd_hr': 'Enigma Hand Take/Release', 
+                    'enigma_hc_hr': 'Enigma Hand Contact/De-Contact', 
+                    'enigma_timestamp': 'Enigma only Timestamp'}
+    
     dataset_filename = cfg['dataset']['json_file']
-    if "enigma_hd_hr" in dataset_filename:
-        tags.append("Enigma Hand Take/Release")
-    elif "enigma_hc_hr" in dataset_filename:
-        tags.append("enigma_hc_hr")
+    dataset_filename = get_filename(dataset_filename)
+    
+    if dataset_filename in dataset_tags:
+        tags.append(dataset_tags[dataset_filename])
     else:
         raise ValueError("Dataset not supported")
     
@@ -40,7 +47,8 @@ def init_wandb(cfg):
     )
     
     # we consider only the last mAP value
-    wandb.define_metric("val/mAP", summary="last")
+    # wandb.define_metric("val/mAP", summary="last")
+    wandb.define_metric("val/mAP", summary="best")
     
     artifact = wandb.Artifact(name='enigma_dataset', type='dataset')
     artifact.add_file(cfg['dataset']['json_file']) # Adds multiple files to artifact
@@ -191,22 +199,29 @@ def main(args):
             print_freq=args.print_freq
         )
 
-        mAP = valid_one_epoch(
-            val_loader,
-            model,
-            epoch,
-            evaluator=det_eval,
-            output_file=None,
-            ext_score_file=None,
-            tb_writer=tb_writer,
-            print_freq=20
-        )
-
-        # save ckpt once in a while
+        # save ckpt once in a while (makes sense to test here on the validation set)
         if (
             ((epoch + 1) == max_epochs) or
             ((args.ckpt_freq > 0) and ((epoch + 1) % args.ckpt_freq == 0))
         ):
+            
+            
+            # model_val = make_meta_arch(cfg['model_name'], **cfg['model'])
+            # # not ideal for multi GPU training, ok for now
+            # model_val = nn.DataParallel(model, device_ids=cfg['devices'])
+            # model_val.load_state_dict(model_ema.module.state_dict())
+            
+            mAP = valid_one_epoch(
+                val_loader,
+                model_ema.module,
+                epoch,
+                evaluator=det_eval,
+                output_file=None,
+                ext_score_file=None,
+                tb_writer=tb_writer,
+                print_freq=20
+            )
+
             save_states = {
                 'epoch': epoch + 1,
                 'state_dict': model.state_dict(),

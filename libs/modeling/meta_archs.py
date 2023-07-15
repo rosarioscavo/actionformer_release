@@ -198,6 +198,10 @@ class PtTransformer(nn.Module):
             fpn_start_level, backbone_arch[-1]+1
         )]
         self.reg_range = regression_range
+        # print(f"len(self.fpn_strides) = {len(self.fpn_strides)}, len(self.reg_range) = {len(self.reg_range)}")
+        # print(f"self.fpn_strides = {self.fpn_strides}, self.reg_range = {self.reg_range}")
+        
+        # assert False == True
         assert len(self.fpn_strides) == len(self.reg_range)
         self.scale_factor = scale_factor
         # #classes = num_classes + 1 (background) with last category as background

@@ -445,9 +445,9 @@ def valid_one_epoch(
         save_results(results, output_file)
         mAP = 0.0
 
+    # mAP = mAP * 100.0
     # log mAP to tb_writer
     if tb_writer is not None:
-        tb_writer.add_scalar('validation/mAP', mAP, curr_epoch)
-        wandb.log({"validation/mAP":mAP})
-
+            tb_writer.add_scalar('validation/mAP', mAP, curr_epoch)
+            wandb.log({"val/mAP":mAP})
     return mAP
