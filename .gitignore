@@ -1,4 +1,9 @@
-data/
+data/thumos
+data/enigma/features
+data/enigma/features_tsn
+data/enigma/resources/enigma_csv
+data/enigma/resources/hand_tr_segmantation_gt
+
 ckpt/
 pretrained/
 exp/
