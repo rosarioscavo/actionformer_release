@@ -22,6 +22,11 @@ from libs.utils import (train_one_epoch, valid_one_epoch, ANETdetection,
                         save_checkpoint, make_optimizer, make_scheduler,
                         fix_random_seed, ModelEma)
 
+import debugpy
+debugpy.listen(5678)
+print("Waiting for debugger attach")
+debugpy.wait_for_client()
+
 def get_filename(path):
     return os.path.splitext(os.path.basename(path))[0]
 
@@ -38,7 +43,8 @@ def init_wandb(cfg):
     if dataset_filename in dataset_tags:
         tags.append(dataset_tags[dataset_filename])
     else:
-        raise ValueError("Dataset not supported")
+        # raise ValueError("Dataset not supported")
+        tags.append("Enigma Dataset")
     
     wandb.init(
         project="actionformer-project",
@@ -104,6 +110,7 @@ def main(args):
     train_dataset = make_dataset(
         cfg['dataset_name'], True, cfg['train_split'], **cfg['dataset']
     )
+    
     
     """2. create validation dataset / dataloader"""
     val_dataset = make_dataset(
