@@ -48,8 +48,7 @@ def init_wandb(cfg):
         tags=tags,
     )
     
-    # we consider only the last mAP value
-    # wandb.define_metric("val/mAP", summary="last")
+    # we consider only the best mAP value
     wandb.define_metric("val/mAP", summary="best")
     
     artifact = wandb.Artifact(name='enigma_dataset', type='dataset')
@@ -151,6 +150,9 @@ def main(args):
     # enable model EMA
     print("Using model EMA ...")
     model_ema = ModelEma(model)
+    
+    best_epoch = 0
+    best_mAP = 0.0
 
     """4. Resume from model / Misc"""
     # resume from a checkpoint?
@@ -224,6 +226,12 @@ def main(args):
                 tb_writer=tb_writer,
                 print_freq=20
             )
+            
+            if mAP > best_mAP:
+                best_mAP = mAP
+                best_epoch = epoch + 1
+            
+            wandb.log({"val/mAP":mAP})
 
             save_states = {
                 'epoch': epoch + 1,
@@ -242,6 +250,7 @@ def main(args):
             )
 
     print('Final average mAP: {:>4.2f} (%)'.format(mAP*100))
+    print(f'Best mPA: {best_mAP*100:.2f} (%) at epoch {best_epoch}')
     
     # save only last ckpt
     ckpt_filename = os.path.join(ckpt_folder, file_name_ckpt)

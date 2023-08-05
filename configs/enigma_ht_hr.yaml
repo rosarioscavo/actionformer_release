@@ -36,7 +36,7 @@ model: {
 }
 opt: {
   learning_rate: 0.0001,
-  epochs: 45,
+  epochs: 60,
   warmup_epochs: 5,
   weight_decay: 0.05,
 }
