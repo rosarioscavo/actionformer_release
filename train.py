@@ -13,6 +13,7 @@ import torch.utils.data
 # for visualization
 from torch.utils.tensorboard import SummaryWriter
 import wandb
+import debugpy
 
 # our code
 from libs.core import load_config
@@ -22,10 +23,6 @@ from libs.utils import (train_one_epoch, valid_one_epoch, ANETdetection,
                         save_checkpoint, make_optimizer, make_scheduler,
                         fix_random_seed, ModelEma)
 
-import debugpy
-debugpy.listen(5678)
-print("Waiting for debugger attach")
-debugpy.wait_for_client()
 
 def get_filename(path):
     return os.path.splitext(os.path.basename(path))[0]
@@ -43,8 +40,7 @@ def init_wandb(cfg):
     if dataset_filename in dataset_tags:
         tags.append(dataset_tags[dataset_filename])
     else:
-        # raise ValueError("Dataset not supported")
-        tags.append("Enigma Dataset")
+        raise ValueError("Dataset not supported")
     
     wandb.init(
         project="actionformer-project",
@@ -111,7 +107,7 @@ def main(args):
         cfg['dataset_name'], True, cfg['train_split'], **cfg['dataset']
     )
     
-    
+
     """2. create validation dataset / dataloader"""
     val_dataset = make_dataset(
         cfg['dataset_name'], False, cfg['val_split'], **cfg['dataset']
@@ -272,5 +268,12 @@ if __name__ == '__main__':
                         help='name of exp folder (default: none)')
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to a checkpoint (default: none)')
+    parser.add_argument('--debug', action='store_true', help='Enable debugging')
+    
     args = parser.parse_args()
+    
+    if args.debug:
+        debugpy.listen(5678)
+        print("Waiting for debugger attach")
+        debugpy.wait_for_client()
     main(args)
