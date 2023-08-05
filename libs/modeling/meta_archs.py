@@ -10,11 +10,7 @@ from .losses import ctr_diou_loss_1d, sigmoid_focal_loss
 
 from ..utils import batched_nms
 
-import debugpy
-debugpy.listen(5678)
-print("Waiting for debugger attach")
-debugpy.wait_for_client()
-print("Started the debugger")
+
 
 class PtTransformerClsHead(nn.Module):
     """
@@ -633,9 +629,6 @@ class PtTransformer(nn.Module):
             offsets_per_vid = [x[idx] for x in out_offsets]
             fpn_masks_per_vid = [x[idx] for x in fpn_masks]
             
-            
-            debugpy.breakpoint()
-            
             # inference on a single video (should always be the case)
             results_per_vid = self.inference_single_video(
                 points, fpn_masks_per_vid,
@@ -651,8 +644,6 @@ class PtTransformer(nn.Module):
 
         # step 3: postprocssing
         results = self.postprocessing(results)
-
-        # we should test cls_logits_per_vid
         
         return results
 

@@ -28,9 +28,9 @@ def get_filename(path):
 def init_wandb(cfg):
     
     tags = []
-    dataset_tags = {'enigma_hd_hr': 'Enigma Hand Take/Release', 
-                    'enigma_hc_hr': 'Enigma Hand Contact/De-Contact', 
-                    'enigma_timestamp': 'Enigma only Timestamp'}
+    dataset_tags = {'enigma_ht_hr': 'Enigma Hand Take/Release', 
+                    'enigma_fc_hd': 'Enigma First Contact/De-Contact', 
+                    'enigma_ht_hr_fc_hd': 'Enigma EveryThing'}
     
     dataset_filename = cfg['dataset']['json_file']
     dataset_filename = get_filename(dataset_filename)

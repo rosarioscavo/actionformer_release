@@ -1,10 +1,9 @@
 dataset_name: enigma
-train_split: ['training']
-val_split: ['testing']
-test_split: ['testing']
+train_split: ['Train']
+val_split: ['Test']
 dataset: {
   # json_file: ./data/enigma/annotations/enigma_hd_hr.json,
-  json_file: ./data/enigma/annotations/enigma_timestamp.json,
+  json_file: ./data/enigma/annotations/enigma_ht_hr.json,
   feat_folder: ./data/enigma/features,
   file_prefix: ~,
   file_ext: .npy,
@@ -16,7 +15,7 @@ dataset: {
   trunc_thresh: 0.5,
   crop_ratio: [0.9, 1.0],
   max_seq_len: 8192, # DA MODIFICARE. Num max feat video = 11791. 
-                     #Deve essere multiplo di fpn_strides * self.mha_win_size
+                     # Deve essere multiplo di fpn_strides * self.mha_win_size
 
   # self.fpn_strides = [scale_factor**i for i in range(
   #     fpn_start_level, backbone_arch[-1]+1
@@ -25,7 +24,7 @@ dataset: {
 }
 model: {
   # backbone_arch: !!python/tuple [2, 2, 5],
-  backbone_arch: !!python/tuple [2, 2, 2], #last param = num of reg blocks - 1
+  backbone_arch: !!python/tuple [2, 2, 2], #last param = num of reg blocks (len of regression_range) - 1
   regression_range: [[0, 2], [2, 5], [5, 10000]],
   #regression_range: [[0, 4], [2, 8], [4, 16], [8, 32], [16, 64], [32, 10000]], EPIC
   # regression_range: [[0, 4], [4, 8], [8, 16], [16, 32], [32, 64], [64, 10000]],
@@ -38,8 +37,7 @@ model: {
 }
 opt: {
   learning_rate: 0.0001,
-  # epochs: 30,
-  epochs: 60,
+  epochs: 45,
   warmup_epochs: 5,
   weight_decay: 0.05,
 }
