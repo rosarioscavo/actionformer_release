@@ -3,8 +3,8 @@ train_split: ['training']
 val_split: ['testing']
 test_split: ['testing']
 dataset: {
-  # json_file: ./data/enigma/annotations/enigma_hd_hr.json,
-  json_file: ./data/enigma/annotations/old/enigma_timestamp.json,
+  json_file: ./data/enigma/annotations/enigma_hd_hr.json,
+  # json_file: ./data/enigma/annotations/old/enigma_timestamp.json,
   feat_folder: ./data/enigma/features,
   file_prefix: ~,
   file_ext: .npy,

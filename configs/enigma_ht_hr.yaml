@@ -1,6 +1,7 @@
 dataset_name: enigma
 train_split: ['train']
 val_split: ['valid']
+test_split: ['test']
 dataset: {
   json_file: ./data/enigma/annotations/enigma_ht_hr.json,
   feat_folder: ./data/enigma/features,

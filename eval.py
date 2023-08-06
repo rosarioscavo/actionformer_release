@@ -26,7 +26,8 @@ def main(args):
         cfg = load_config(args.config)
     else:
         raise ValueError("Config file does not exist.")
-    assert len(cfg['val_split']) > 0, "Test set must be specified!"
+    # assert len(cfg['val_split']) > 0, "Test set must be specified!"
+    assert len(cfg['test_split']) > 0, "Test set must be specified!"
     if ".pth.tar" in args.ckpt:
         assert os.path.isfile(args.ckpt), "CKPT file does not exist!"
         ckpt_file = args.ckpt
@@ -51,7 +52,9 @@ def main(args):
 
     """2. create dataset / dataloader"""
     val_dataset = make_dataset(
-        cfg['dataset_name'], False, cfg['val_split'], **cfg['dataset']
+        # cfg['dataset_name'], False, cfg['val_split'], **cfg['dataset']
+        cfg['dataset_name'], False, cfg['test_split'], **cfg['dataset']
+        
     )
     # set bs = 1, and disable shuffle
     val_loader = make_data_loader(
