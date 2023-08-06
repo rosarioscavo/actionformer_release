@@ -39,8 +39,8 @@ def init_wandb(cfg):
     
     if dataset_filename in dataset_tags:
         tags.append(dataset_tags[dataset_filename])
-    else:
-        raise ValueError("Dataset not supported")
+    # else:
+    #     raise ValueError("Dataset not supported")
     
     wandb.init(
         project="actionformer-project",
