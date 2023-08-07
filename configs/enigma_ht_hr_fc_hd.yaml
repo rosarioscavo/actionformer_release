@@ -3,11 +3,11 @@ train_split: ['train']
 val_split: ['valid']
 test_split: ['test']
 dataset: {
-  json_file: ./data/enigma/annotations/enigma_ht_hr.json,
+  json_file: ./data/enigma/annotations/padding_dx/enigma_ht_hr_fc_hd.json,
   feat_folder: ./data/enigma/features,
   file_prefix: ~,
   file_ext: .npy,
-  num_classes: 2, # negative data are excluded
+  num_classes: 4, # negative data are excluded
   input_dim: 3072,
   feat_stride: 6,
   num_frames: 6,

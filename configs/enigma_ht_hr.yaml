@@ -3,7 +3,7 @@ train_split: ['train']
 val_split: ['valid']
 test_split: ['test']
 dataset: {
-  json_file: ./data/enigma/annotations/enigma_ht_hr.json,
+  json_file: ./data/enigma/annotations/padding_dx/enigma_ht_hr.json,
   feat_folder: ./data/enigma/features,
   file_prefix: ~,
   file_ext: .npy,
@@ -23,11 +23,8 @@ dataset: {
 
 }
 model: {
-  # backbone_arch: !!python/tuple [2, 2, 5],
   backbone_arch: !!python/tuple [2, 2, 2], #last param = num of reg blocks (len of regression_range) - 1
   regression_range: [[0, 2], [2, 5], [5, 10000]],
-  #regression_range: [[0, 4], [2, 8], [4, 16], [8, 32], [16, 64], [32, 10000]], EPIC
-  # regression_range: [[0, 4], [4, 8], [8, 16], [16, 32], [32, 64], [64, 10000]],
   fpn_type: identity,
   # max_buffer_len_factor: 6.0, THUMOS
   # n_mha_win_size: 19,   THUMOS
